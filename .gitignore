@@ -1,0 +1,5 @@
+go/coverage.out
+hugo/.hugo_build.lock
+hugo/public
+hugo/resources
+yaml8n_*

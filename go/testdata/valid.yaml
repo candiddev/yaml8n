@@ -1,0 +1,10 @@
+defaultCode: en
+iso639Codes:
+  en: English
+outputs:
+  - format: go
+    path: ../
+translations:
+  hello:
+    context: Context
+    en: Hello!

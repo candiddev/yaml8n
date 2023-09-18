@@ -13,8 +13,6 @@ on:
   push:
     branches:
       - main
-    tags:
-      - v*
 
 permissions:
   contents: write # This is required for actions/checkout and releases
@@ -24,7 +22,6 @@ permissions:
 
 jobs:
   dependencies:
-    if: '!contains(github.ref, ''refs/tags/'')'
     name: Update Dependencies
     runs-on: ubuntu-latest
     steps:
@@ -36,7 +33,6 @@ jobs:
         uses: ./github/setup
 
   lint:
-    if: '!contains(github.ref, ''refs/tags/'')'
     name: Lint
     needs:
       - dependencies
@@ -57,7 +53,6 @@ jobs:
         run: ./m lint-shell
 
   test_go:
-    if: '!contains(github.ref, ''refs/tags/'')'
     name: Test - Go
     needs:
       - dependencies
@@ -117,25 +112,3 @@ jobs:
         if: github.ref_name == 'main'
         id: deployment
         uses: actions/deploy-pages@v2
-
-  release_tag:
-    env:
-      BUILD_SOURCE: tag
-    if: contains(github.ref, 'refs/tags/')
-    name: Release - Tag
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: true
-      - name: Setup
-        id: setup
-        uses: ./github/setup
-        with:
-          vault_address: ${{ secrets.VAULT_ADDR }}
-          vault_role: yaml8n
-      - name: Create release
-        run: |
-          ./m tag-github-release
-          ./m release

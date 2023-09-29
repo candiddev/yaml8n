@@ -20,6 +20,7 @@ menu:
 params:
   colorPrimary: green
   colorSecondary: blue
+  description: Type safe localizations.  Powered by AI and YAML.
   links:
     developer:
       - description: GitHub

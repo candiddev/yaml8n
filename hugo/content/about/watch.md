@@ -1,6 +1,7 @@
 ---
 categories:
 - feature
+description: YAML8n gives your developers a great experience by creating translations automatically while they're developing.
 title: Developer Experience
 type: docs
 ---

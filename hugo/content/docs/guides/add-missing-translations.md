@@ -1,6 +1,7 @@
 ---
 categories:
 - guide
+description: How to add missing translations
 title: Add Missing Translations
 weight: 40
 ---

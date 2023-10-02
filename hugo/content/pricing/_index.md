@@ -1,5 +1,5 @@
 ---
-linkTitle: Pricing
+description: Pricing details for YAML8n AGPL license exemptions.
 menu: {main}
 title: Pricing
 weight: 30

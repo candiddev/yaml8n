@@ -1,6 +1,7 @@
 ---
 categories:
 - feature
+description: YAML8n uses AI to create translations automatically.
 title: AI-Powered Translations
 type: docs
 ---

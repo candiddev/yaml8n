@@ -2,7 +2,7 @@
 
 > Easy Localizations, Great Developer Experience
 
-[![Integration](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml/badge.svg?branch=main)](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml)
+[![Integration](https://github.com/candiddev/yaml8n/actions/workflows/workflow.yaml/badge.svg?branch=main)](https://github.com/candiddev/yaml8n/actions/workflows/workflow.yaml)
 
 YAML8n is an open source command line (CLI) tool for converting translations into type safe code.
 
@@ -16,7 +16,7 @@ Visit https://yaml8n.dev for more information.
 
 ## License
 
-The code in this repository is licensed under the [GNU AGPL](https://www.gnu.org/licenses/agpl-3.0.en.html).  Visit https://yaml8n.dev/pricing/ to purchase license exemptions.
+The code in this repository is licensed under the [GNU AGPL](https://www.gnu.org/licenses/agpl-3.0.en.html).  Visit https://yaml8n.dev/pricing/ to purchase a license exemptions.
 
 ## Development
 

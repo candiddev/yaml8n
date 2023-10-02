@@ -1,7 +1,7 @@
 ---
-linkTitle: Docs
+description: YAML8ns's documentation.  Contains explanations, references, and guides.
 menu: {main}
-title: YAML8n Documentation
+title: Documentation
 weight: 20
 ---
 

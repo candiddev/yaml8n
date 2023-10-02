@@ -1,8 +1,8 @@
 ---
-linkTitle: About
+description: |
+  About YAML8n, an easy way to create localizations for your app.
 menu: {main}
-title: |
-  Easy Localizations, Great Developer Experience
+title: About
 type: docs
 weight: 10
 ---

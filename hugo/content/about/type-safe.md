@@ -1,6 +1,7 @@
 ---
 categories:
 - feature
+description: YAML8n creates type safe translations for your app.
 title: Type Safe Translations
 type: docs
 ---

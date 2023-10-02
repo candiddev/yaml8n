@@ -1,6 +1,7 @@
 ---
 categories:
 - guide
+description: How to install YAML8n
 title: Install YAML8n
 weight: 10
 ---

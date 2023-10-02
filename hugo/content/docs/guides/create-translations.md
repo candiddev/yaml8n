@@ -1,6 +1,7 @@
 ---
 categories:
 - guide
+description: How to create translations.
 title: Create Translations
 weight: 20
 ---

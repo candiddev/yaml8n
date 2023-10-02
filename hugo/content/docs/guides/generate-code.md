@@ -1,6 +1,7 @@
 ---
 categories:
 - guide
+description: How to generate type safe code from your translations.
 title: Generate Code
 weight: 30
 ---

@@ -1,6 +1,7 @@
 ---
 categories:
 - reference
+description: Reference documentation for YAML8n's translation format.
 title: Translations
 ---
 

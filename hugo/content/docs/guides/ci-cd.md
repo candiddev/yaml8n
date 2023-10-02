@@ -1,6 +1,7 @@
 ---
 categories:
 - guide
+description: How to integrate YAML8n within your CI/CD pipelines.
 title: CI/CD
 weight: 50
 ---

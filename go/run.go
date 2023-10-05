@@ -69,7 +69,7 @@ func run(ctx context.Context, args []string, c *config) errs.Err { //nolint: goc
 
 		err = watcher.Add(c.Input)
 		if err != nil {
-			return logger.Log(ctx, errs.NewCLIErr(fmt.Errorf("error opening %s: %w", c.Input, err)))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("error opening %s: %w", c.Input, err)))
 		}
 
 		// Block main goroutine forever.

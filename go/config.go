@@ -21,5 +21,5 @@ func (c *config) CLIConfig() *cli.Config {
 }
 
 func (c *config) Parse(ctx context.Context, configArgs, paths string) errs.Err {
-	return logger.Log(ctx, cfg.Parse(ctx, c, "yaml8n", "", configArgs, paths))
+	return logger.Error(ctx, cfg.Parse(ctx, c, "yaml8n", "", configArgs, paths))
 }

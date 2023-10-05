@@ -2,7 +2,7 @@
 
 > Easy Localizations, Great Developer Experience
 
-[![Integration](https://github.com/candiddev/yaml8n/actions/workflows/workflow.yaml/badge.svg?branch=main)](https://github.com/candiddev/yaml8n/actions/workflows/workflow.yaml)
+[![Integration](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml/badge.svg?branch=main)](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml)
 
 YAML8n is an open source command line (CLI) tool for converting translations into type safe code.
 

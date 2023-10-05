@@ -37,20 +37,20 @@ func parseTranslations(ctx context.Context, c *config) (*translations, error) {
 
 	content, err := os.ReadFile(c.Input)
 	if err != nil {
-		return nil, logger.Log(ctx, errs.NewCLIErr(err))
+		return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 	}
 
 	if err := yaml.UnmarshalStrict(content, &t); err != nil {
-		return nil, logger.Log(ctx, errs.NewCLIErr(err))
+		return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 	}
 
 	if len(t.Outputs) == 0 {
-		return nil, logger.Log(ctx, errs.NewCLIErr(errors.New("no outputs defined")))
+		return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no outputs defined")))
 	}
 
 	for i := range t.Outputs {
 		if _, ok := formats[t.Outputs[i].Format]; !ok {
-			return nil, logger.Log(ctx, errs.NewCLIErr(fmt.Errorf("unknown format: %s", t.Outputs[i].Format)))
+			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("unknown format: %s", t.Outputs[i].Format)))
 		}
 
 		if t.Outputs[i].Package == "" {
@@ -58,7 +58,7 @@ func parseTranslations(ctx context.Context, c *config) (*translations, error) {
 		}
 
 		if t.Outputs[i].Path == "" {
-			return nil, logger.Log(ctx, errs.NewCLIErr(errors.New("output path must be specified")))
+			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("output path must be specified")))
 		}
 
 		if strings.HasPrefix(t.Outputs[i].Path, "/") {
@@ -68,7 +68,7 @@ func parseTranslations(ctx context.Context, c *config) (*translations, error) {
 		}
 	}
 
-	logger.Log(ctx, nil) //nolint:errcheck
+	logger.Error(ctx, nil) //nolint:errcheck
 
 	return &t, t.validate(ctx, c, string(content))
 }
@@ -77,11 +77,11 @@ func (t *translations) generate(ctx context.Context) error {
 	for i := range t.Outputs {
 		f, ok := formats[t.Outputs[i].Format]
 		if !ok {
-			return logger.Log(ctx, errs.NewCLIErr(fmt.Errorf("unknown language: %s", t.Outputs[i].Format)))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("unknown language: %s", t.Outputs[i].Format)))
 		}
 
 		if err := os.MkdirAll(t.Outputs[i].realPath, 0755); err != nil { //nolint:gosec
-			return logger.Log(ctx, errs.NewCLIErr(err))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 		}
 
 		tmp, err := template.New("code").Funcs(template.FuncMap{
@@ -90,7 +90,7 @@ func (t *translations) generate(ctx context.Context) error {
 			},
 		}).Parse(f.Template)
 		if err != nil {
-			return logger.Log(ctx, errs.NewCLIErr(err))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 		}
 
 		if f.PerLanguage {
@@ -98,28 +98,28 @@ func (t *translations) generate(ctx context.Context) error {
 				t.DefaultCode = j
 
 				if err := writeTemplate(ctx, t, tmp, filepath.Join(t.Outputs[i].realPath, fmt.Sprintf("%s.%s", j, f.Extension))); err != nil {
-					return logger.Log(ctx, err)
+					return logger.Error(ctx, err)
 				}
 			}
 		} else {
 			if err := writeTemplate(ctx, t, tmp, filepath.Join(t.Outputs[i].realPath, fmt.Sprintf("%s.%s", t.Outputs[i].Package, f.Extension))); err != nil {
-				return logger.Log(ctx, err)
+				return logger.Error(ctx, err)
 			}
 		}
 	}
 
-	return logger.Log(ctx, nil)
+	return logger.Error(ctx, nil)
 }
 
 func writeTemplate(ctx context.Context, t *translations, tmp *template.Template, path string) errs.Err {
 	var out bytes.Buffer
 
 	if err := tmp.Execute(&out, t); err != nil {
-		return logger.Log(ctx, errs.NewCLIErr(err))
+		return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 	}
 
 	if err := os.WriteFile(path, out.Bytes(), 0644); err != nil { //nolint: gosec
-		return logger.Log(ctx, errs.NewCLIErr(err))
+		return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 	}
 
 	return nil
@@ -241,17 +241,17 @@ func (t *translations) validate(ctx context.Context, c *config, raw string) errs
 {{- end }}
 {{ end -}}
 `)).Execute(&out, o); err != nil {
-			return logger.Log(ctx, errs.NewCLIErr(err))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 		}
 
 		if len(o.Errs) > 0 || (len(o.Warnings) > 0 && c.FailWarn) {
 			err = errValidationFailure
 		}
 
-		logger.LogNotice("\n", out.String())
+		logger.Info(ctx, "\n", out.String())
 
 		if err != nil {
-			return logger.Log(ctx, errs.NewCLIErr(err))
+			return logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 		}
 	}
 

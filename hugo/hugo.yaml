@@ -1,12 +1,4 @@
 baseURL: https://yaml8n.dev
-disableLanguages:
-  - ar
-  - de
-  - es
-  - fr
-  - hi
-  - nl
-  - zh
 menu:
   main:
     - name: Get YAML8n

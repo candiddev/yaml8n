@@ -1,4 +1,4 @@
-# YAML8n
+# <img alt=logo src=yaml8n.png width=40px> YAML8n
 
 > Easy Localizations, Great Developer Experience
 
@@ -16,7 +16,7 @@ Visit https://yaml8n.dev for more information.
 
 ## License
 
-The code in this repository is licensed under the [GNU AGPL](https://www.gnu.org/licenses/agpl-3.0.en.html).  Visit https://yaml8n.dev/pricing/ to purchase a license exemptions.
+The code in this repository is licensed under the [GNU AGPL](https://www.gnu.org/licenses/agpl-3.0.en.html).  Visit https://yaml8n.dev/pricing/ to purchase a license exemption.
 
 ## Development
 

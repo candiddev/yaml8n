@@ -16,6 +16,7 @@ import (
 	"github.com/candiddev/shared/go/errs"
 	"github.com/candiddev/shared/go/get"
 	"github.com/candiddev/shared/go/logger"
+	"github.com/candiddev/shared/go/types"
 	"github.com/google/go-jsonnet"
 	"github.com/google/go-jsonnet/ast"
 )
@@ -25,15 +26,18 @@ var ErrRender = errors.New("error rendering jsonnet")
 // Render is a jsonnet renderer.
 type Render struct {
 	imports *Imports
+	path    string
 	vm      *jsonnet.VM
 }
 
 // NewRender returns a jsonnet renderer.
-func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
+func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit,gocyclo
 	cache := map[string]any{}
-	vm := jsonnet.MakeVM()
+	r := &Render{
+		vm: jsonnet.MakeVM(),
+	}
 
-	vm.NativeFunction(&jsonnet.NativeFunction{
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			out, err := json.Marshal(config)
 			if err != nil {
@@ -50,21 +54,26 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 		},
 		Name: "getConfig",
 	})
-	vm.NativeFunction(&jsonnet.NativeFunction{
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			if key, ok := params[0].(string); ok {
-				return os.Getenv(key), nil
+				key := os.Getenv(key)
+				if key == "" && len(params) == 2 && params[1] != nil {
+					return params[1], nil
+				}
+
+				return key, nil
 			}
 
 			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no key provided")))
 		},
 		Name:   "getEnv",
-		Params: ast.Identifiers{"key"},
+		Params: ast.Identifiers{"key", "fallback"},
 	})
-	vm.NativeFunction(&jsonnet.NativeFunction{
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			if path, ok := params[0].(string); ok {
-				if v, ok := cache["getPath_"+path]; ok {
+				if v, ok := cache["getFile_"+path]; ok {
 					return v, nil
 				}
 
@@ -72,7 +81,7 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 
 				_, err := get.File(ctx, path, b, time.Time{})
 				if err != nil {
-					if params[1] != nil {
+					if len(params) == 2 && params[1] != nil {
 						return params[1], nil
 					}
 
@@ -81,17 +90,23 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 
 				s := strings.TrimSpace(b.String())
 
-				cache["getPath"+path] = s
+				cache["getFile"+path] = s
 
 				return s, nil
 			}
 
 			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no path provided")))
 		},
-		Name:   "getPath",
+		Name:   "getFile",
 		Params: ast.Identifiers{"path", "fallback"},
 	})
-	vm.NativeFunction(&jsonnet.NativeFunction{
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
+		Func: func(params []any) (any, error) {
+			return r.path, nil
+		},
+		Name: "getPath",
+	})
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			t, ok := params[0].(string)
 			if !ok {
@@ -148,7 +163,7 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 			}
 
 			if err != nil {
-				if params[2] != nil {
+				if len(params) == 3 && params[2] != nil {
 					return params[2], nil
 				}
 
@@ -170,7 +185,19 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 		Name:   "getRecord",
 		Params: ast.Identifiers{"type", "name", "fallback"},
 	})
-	vm.NativeFunction(&jsonnet.NativeFunction{
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
+		Func: func(params []any) (any, error) {
+			length, ok := params[0].(float64)
+			if !ok {
+				return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no length provided")))
+			}
+
+			return types.RandString(int(length)), nil
+		},
+		Name:   "randStr",
+		Params: ast.Identifiers{"length"},
+	})
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			reg, ok := params[0].(string)
 			if !ok {
@@ -192,11 +219,29 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit
 		Name:   "regexMatch",
 		Params: ast.Identifiers{"regex", "string"},
 	})
-	vm.SetTraceOut(logger.Stderr)
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
+		Func: func(params []any) (any, error) {
+			s, ok := params[0].(string)
+			if !ok {
+				return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no string provided")))
+			}
 
-	return &Render{
-		vm: vm,
-	}
+			r := NewRender(ctx, config)
+			r.Import(r.GetString(s))
+
+			m := map[string]any{}
+			if err := r.Render(ctx, &m); err != nil {
+				return nil, logger.Error(ctx, err)
+			}
+
+			return m, nil
+		},
+		Name:   "render",
+		Params: ast.Identifiers{"string"},
+	})
+	r.vm.SetTraceOut(logger.Stderr)
+
+	return r
 }
 
 // Render evaluates the main.jsonnet file onto a dest.

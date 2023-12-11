@@ -17,10 +17,6 @@ Check/validate a specific [language code](../references/translations#iso639codes
 
 Enable debug logging.
 
-### `-j`
-
-Output JSON instead of YAML.
-
 ### `-n`
 
 Disable colored log output.

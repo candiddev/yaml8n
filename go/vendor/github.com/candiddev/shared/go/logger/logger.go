@@ -57,15 +57,8 @@ var Stdout *os.File = os.Stdout //nolint:gochecknoglobals
 var loggerOut logger = log.New(Stdout, "", 0) //nolint:gochecknoglobals
 var loggerErr logger = log.New(Stderr, "", 0) //nolint:gochecknoglobals
 
-var noColor = false //nolint:gochecknoglobals
-
 var r *os.File //nolint: gochecknoglobals
 var w *os.File //nolint: gochecknoglobals
-
-// NoColor disables colored output.
-func NoColor() {
-	noColor = true
-}
 
 // ReadStd returns what was sent to stdout.
 func ReadStd() string {
@@ -155,13 +148,22 @@ func writeLog(ctx context.Context, level Level, err errs.Err, message string) { 
 
 	switch format {
 	case FormatHuman:
-		out = fmt.Sprintf("%-5s %s", strings.ToUpper(string(level)), f)
+		out = fmt.Sprintf("%-5s ", strings.ToUpper(string(level)))
+
+		if e == "" && msg == "" {
+			return
+		}
+
 		if e != "" {
-			out += "\n" + e
+			out += e
+
+			if msg != "" {
+				out += "\n"
+			}
 		}
 
 		if msg != "" {
-			out += "\n" + msg
+			out += msg
 		}
 	case FormatKV:
 		out = fmt.Sprintf("level=%#v function=%#v status=%#v success=%#v", strings.ToUpper(string(level)), f, status, status == 200)
@@ -170,7 +172,7 @@ func writeLog(ctx context.Context, level Level, err errs.Err, message string) { 
 		}
 
 		if span.SpanContext().HasTraceID() {
-			out += fmt.Sprintf(" traceID=%#v", span.SpanContext().TraceID())
+			out += fmt.Sprintf(" traceID=%#v", span.SpanContext().TraceID().String())
 		}
 
 		out += " " + GetAttributes(ctx)
@@ -191,13 +193,13 @@ func writeLog(ctx context.Context, level Level, err errs.Err, message string) { 
 	switch {
 	case m == LevelNone:
 	case level == LevelError:
-		if !noColor {
+		if !GetNoColor(ctx) {
 			out = ColorRed + out + ColorReset
 		}
 
 		loggerErr.Print(out)
 	case level == LevelDebug && m == LevelDebug:
-		if !noColor {
+		if !GetNoColor(ctx) {
 			out = ColorBlue + out + ColorReset
 		}
 
@@ -226,24 +228,29 @@ func Info(ctx context.Context, message ...string) {
 
 // Raw writes an raw message to stdout.
 func Raw(message ...string) {
-	writeLog(SetFormat(context.Background(), FormatRaw), LevelInfo, nil, strings.Join(message, ""))
+	fmt.Fprint(Stdout, strings.Join(message, "")) //nolint:forbidigo
 }
 
 // UseTestLogger sets the logging output to the test logger.
-func UseTestLogger(tb testing.TB) {
+func UseTestLogger(tb testing.TB) context.Context {
 	tb.Helper()
 
 	t := testLogger{TB: tb}
 
-	noColor = true
 	loggerErr = t
 	loggerOut = t
+
+	ctx := context.Background()
+	ctx = SetFormat(ctx, FormatKV)
+	ctx = SetLevel(ctx, LevelDebug)
+
+	return SetNoColor(ctx, true)
 }
 
 func getFunc(depth int) (string, int) {
 	_, file, line, _ := runtime.Caller(depth)
 	n := strings.Split(file, "/")
-	f := strings.Join(n[len(n)-4:], "/")
+	f := strings.Join(n[len(n)-2:], "/")
 
 	return f, line
 }

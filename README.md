@@ -4,6 +4,9 @@
 
 [![Integration](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml/badge.svg?branch=main)](https://github.com/candiddev/yaml8n/actions/workflows/integration.yaml)
 
+[:book: Docs](https://yaml8n.dev/docs/)\
+[:motorway: Roadmap](https://github.com/orgs/candiddev/projects/6/views/34)
+
 YAML8n is an open source command line (CLI) tool for converting translations into type safe code.
 
 YAML8n makes translating applications easy:

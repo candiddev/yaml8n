@@ -6,7 +6,7 @@ title: Add Missing Translations
 weight: 40
 ---
 
-YAML8n can add missing translations using [Google Cloud Translation API](https://cloud.google.com/translate).  Follow these steps after creating your [Translations](../../references/translations) to use [`yaml8n translate`](../../references/cli/#translate-path)
+YAML8n can add missing translations using [Google Cloud Translation API](https://cloud.google.com/translate).  Follow these steps after creating your [Translations]({{< ref "/docs/references/translations" >}}) to use [`yaml8n translate`]({{< ref "/docs/references/cli#translate-path" >}})
 
 ## Create a Google Cloud Project
 

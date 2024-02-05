@@ -9,32 +9,32 @@ var typescript = format{ //nolint:gochecknoglobals
 export type ISO639Code = string;
 
 export interface Translation {
-	[key: ISO639Code]: string,
+  [key: ISO639Code]: string;
 }
 
 export const ISO639Codes: {
-	[key: ISO639Code]: string,
+  [key: ISO639Code]: string;
 } = {
 {{- range $key, $value := .ISO639Codes }}
-	{{ $key }}: "{{ $value }}",
+  {{ $key }}: "{{ $value }}",
 {{- end }}
 };
 
-export function Translate (c: ISO639Code, t: Translation): string {
-	const code = c.split("-")[0];
-	if (t[code] !== undefined) {
-		return t[code];
-	}
+export function Translate(c: ISO639Code, t: Translation): string {
+  const code = c.split("-")[0];
+  if (t[code] !== undefined) {
+    return t[code];
+  }
 
-	return t["{{ .DefaultCode }}"];
+  return t["{{ .DefaultCode }}"];
 }
 {{ range $name, $values := .Translations }}
 export const {{ $name }}: Translation = {
 {{- range $code, $value := $values }}
 {{- if ne $code "context" }}
-	{{ $code }}: ` + "`{{ $value }}`" + `,
+  {{ $code }}: ` + "`{{ $value }}`" + `,
 {{- end }}{{ end }}
 };
 {{ end -}}
-	`,
+`,
 }

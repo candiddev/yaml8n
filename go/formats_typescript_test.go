@@ -13,32 +13,32 @@ func TestFormatsTypescript(t *testing.T) {
 export type ISO639Code = string;
 
 export interface Translation {
-	[key: ISO639Code]: string,
+  [key: ISO639Code]: string;
 }
 
 export const ISO639Codes: {
-	[key: ISO639Code]: string,
+  [key: ISO639Code]: string;
 } = {
-	de: "Deutsch",
-	en: "English",
+  de: "Deutsch",
+  en: "English",
 };
 
-export function Translate (c: ISO639Code, t: Translation): string {
-	const code = c.split("-")[0];
-	if (t[code] !== undefined) {
-		return t[code];
-	}
+export function Translate(c: ISO639Code, t: Translation): string {
+  const code = c.split("-")[0];
+  if (t[code] !== undefined) {
+    return t[code];
+  }
 
-	return t["en"];
+  return t["en"];
 }
 
 export const HelloWorld: Translation = {
-	de: ` + "`Hallo Welt`" + `,
-	en: ` + "`Hello World`" + `,
+  de: ` + "`Hallo Welt`" + `,
+  en: ` + "`Hello World`" + `,
 };
 
 export const TranslateMe: Translation = {
-	en: ` + "`Translate Me`" + `,
+  en: ` + "`Translate Me`" + `,
 };
 `,
 	})

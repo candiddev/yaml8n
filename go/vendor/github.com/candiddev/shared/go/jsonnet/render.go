@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ var ErrRender = errors.New("error rendering jsonnet")
 
 // Render is a jsonnet renderer.
 type Render struct {
+	env     *[]string
 	imports *Imports
 	path    string
 	vm      *jsonnet.VM
@@ -37,6 +39,12 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit,gocy
 		vm: jsonnet.MakeVM(),
 	}
 
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
+		Func: func([]any) (any, error) {
+			return runtime.GOARCH, nil
+		},
+		Name: "getArch",
+	})
 	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
 			out, err := json.Marshal(config)
@@ -56,16 +64,35 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit,gocy
 	})
 	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
-			if key, ok := params[0].(string); ok {
-				key := os.Getenv(key)
-				if key == "" && len(params) == 2 && params[1] != nil {
-					return params[1], nil
+			var key string
+
+			var ok bool
+
+			v := ""
+
+			if key, ok = params[0].(string); ok {
+				if r.env == nil {
+					v = os.Getenv(key)
+				} else {
+					for _, e := range *r.env {
+						if s := strings.Split(e, "="); len(s) == 2 && s[0] == key {
+							v = s[1]
+
+							break
+						}
+					}
 				}
 
-				return key, nil
+				if v != "" {
+					return v, nil
+				}
 			}
 
-			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("no key provided")))
+			if v == "" && len(params) == 2 && params[1] != nil {
+				return params[1], nil
+			}
+
+			return nil, logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("no value found for %s and no fallback provided", key)))
 		},
 		Name:   "getEnv",
 		Params: ast.Identifiers{"key", "fallback"},
@@ -99,6 +126,13 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit,gocy
 		},
 		Name:   "getFile",
 		Params: ast.Identifiers{"path", "fallback"},
+	})
+
+	r.vm.NativeFunction(&jsonnet.NativeFunction{
+		Func: func([]any) (any, error) {
+			return runtime.GOOS, nil
+		},
+		Name: "getOS",
 	})
 	r.vm.NativeFunction(&jsonnet.NativeFunction{
 		Func: func(params []any) (any, error) {
@@ -244,6 +278,11 @@ func NewRender(ctx context.Context, config any) *Render { //nolint:gocognit,gocy
 	return r
 }
 
+// SetEnv sets a custom Env list for getEnv.
+func (r *Render) SetEnv(env *[]string) {
+	r.env = env
+}
+
 // Render evaluates the main.jsonnet file onto a dest.
 func (r *Render) Render(ctx context.Context, dest any) errs.Err {
 	if r.imports == nil {
@@ -252,11 +291,11 @@ func (r *Render) Render(ctx context.Context, dest any) errs.Err {
 
 	s, err := r.vm.EvaluateFile(r.imports.Entrypoint)
 	if err != nil {
-		return logger.Error(ctx, errs.ErrReceiver.Wrap(ErrRender), err.Error())
+		return logger.Error(ctx, errs.ErrReceiver.Wrap(ErrRender, err))
 	}
 
 	if err := json.Unmarshal([]byte(s), dest); err != nil {
-		return logger.Error(ctx, errs.ErrReceiver.Wrap(ErrRender), err.Error())
+		return logger.Error(ctx, errs.ErrReceiver.Wrap(ErrRender, err))
 	}
 
 	return nil

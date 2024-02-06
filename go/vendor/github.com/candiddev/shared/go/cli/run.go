@@ -6,9 +6,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"os/user"
+	osuser "os/user"
 	"strconv"
 	"strings"
 	"sync"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/candiddev/shared/go/errs"
 	"github.com/candiddev/shared/go/logger"
-	"github.com/candiddev/shared/go/types"
 )
 
 // ContainerRuntime is an enum for determining which runtime to use.
@@ -30,9 +30,10 @@ const (
 )
 
 var (
-	ErrRun            = errors.New("error running commands")
-	ErrRunLookupGroup = errors.New("error looking up group")
-	ErrRunLookupUser  = errors.New("error looking up user")
+	ErrRun                  = errors.New("error running commands")
+	ErrRunUnterminatedQuote = errors.New("unterminated quote in arguments")
+	ErrRunLookupGroup       = errors.New("error looking up group")
+	ErrRunLookupUser        = errors.New("error looking up user")
 )
 
 // CmdOutput is a string of the command exec output.
@@ -46,18 +47,56 @@ func (c CmdOutput) String() string {
 	return ""
 }
 
-func getContainerRuntime() (ContainerRuntime, error) {
-	_, err := exec.LookPath("podman")
+// GetContainerRuntime returns the detected ContainerRuntime.
+func GetContainerRuntime() (ContainerRuntime, error) {
+	_, err := exec.LookPath("docker")
 	if err != nil {
-		_, err := exec.LookPath("docker")
+		_, err := exec.LookPath("podman")
 		if err != nil {
 			return ContainerRuntimeNone, errors.New("no container runtime found")
 		}
 
-		return ContainerRuntimeDocker, nil
+		return ContainerRuntimePodman, nil
 	}
 
-	return ContainerRuntimePodman, nil
+	return ContainerRuntimeDocker, nil
+}
+
+func parseArgs(args []string) ([]string, error) {
+	o := []string{}
+	quote := ""
+	text := ""
+
+	for _, a := range args {
+		if a == "" {
+			continue
+		}
+
+		switch {
+		// In a quote
+		case quote != "":
+			if strings.HasSuffix(a, quote) { // Quote end
+				o = append(o, text+" "+a[:len(a)-1])
+				quote = ""
+				text = ""
+			} else { // Quote continue
+				text += " " + a
+			}
+		// Begin quote
+		case strings.HasPrefix(a, `"`) || strings.HasPrefix(a, "'"):
+			quote = string(a[0])
+			text += a[1:]
+		// No quote
+		case quote == "":
+			o = append(o, a)
+		}
+	}
+
+	if quote != "" {
+		return nil, fmt.Errorf("%w: %s", ErrRunUnterminatedQuote, quote)
+	}
+
+	return o, nil
 }
 
 // RunOpts are options for running a CLI command.
@@ -66,6 +105,7 @@ type RunOpts struct {
 	Command             string
 	ContainerEntrypoint string
 	ContainerImage      string
+	ContainerNetwork    string
 	ContainerPull       string
 	ContainerPrivileged bool
 	ContainerUser       string
@@ -75,12 +115,14 @@ type RunOpts struct {
 	EnvironmentInherit  bool
 	Group               string
 	NoErrorLog          bool
-	User                string
 	Stdin               string
+	Stderr              io.Writer
+	Stdout              io.Writer
+	User                string
 	WorkDir             string
 }
 
-func (r *RunOpts) getCmd(ctx context.Context) (*exec.Cmd, errs.Err) {
+func (r *RunOpts) getCmd(ctx context.Context) (*exec.Cmd, []string, errs.Err) {
 	var args []string
 
 	var cmd string
@@ -89,29 +131,27 @@ func (r *RunOpts) getCmd(ctx context.Context) (*exec.Cmd, errs.Err) {
 		cmd = r.Command
 		args = r.Args
 	} else {
-		cri, err := getContainerRuntime()
+		cri, err := GetContainerRuntime()
 		if err != nil {
-			return nil, errs.ErrReceiver.Wrap(err)
+			return nil, nil, errs.ErrReceiver.Wrap(err)
 		}
 
 		if cri != "" {
 			cmd = string(cri)
-			args = []string{
-				"run",
-				"-i",
-				"--rm",
-				"--name",
-				fmt.Sprintf("etcha_%s", types.RandString(10)),
-			}
+			args = []string{"run", "-i", "--rm"}
 
 			if len(r.Environment) > 0 {
 				for i := range r.Environment {
-					args = append(args, "-e"+r.Environment[i])
+					args = append(args, "-e", r.Environment[i])
 				}
 			}
 
 			if r.ContainerEntrypoint != "" {
 				args = append(args, "--entrypoint", r.ContainerEntrypoint)
+			}
+
+			if r.ContainerNetwork != "" {
+				args = append(args, "--network", r.ContainerNetwork)
 			}
 
 			if r.ContainerPrivileged {
@@ -144,35 +184,85 @@ func (r *RunOpts) getCmd(ctx context.Context) (*exec.Cmd, errs.Err) {
 		}
 	}
 
-	return exec.CommandContext(ctx, cmd, args...), nil
+	env := []string{}
+
+	if r.EnvironmentInherit {
+		env = os.Environ()
+	}
+
+	env = append(env, r.Environment...)
+
+	// Parse quotes
+	a, err := parseArgs(args)
+	if err != nil {
+		return nil, nil, errs.ErrReceiver.Wrap(err)
+	}
+
+	return exec.CommandContext(ctx, cmd, a...), env, nil
+}
+
+// GetGID takes a group identifier string and returns an gid or error.
+func GetGID(group string) (uint32, error) {
+	g, err := strconv.ParseUint(group, 10, 32)
+	if err != nil {
+		gu, err := osuser.LookupGroup(group)
+		if err != nil {
+			return 0, fmt.Errorf("%w: %s: %w", ErrRunLookupGroup, group, err)
+		}
+
+		g, err = strconv.ParseUint(gu.Gid, 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("%w: %s: %w", ErrRunLookupGroup, group, err)
+		}
+	}
+
+	return uint32(g), nil
+}
+
+// GetUID takes a user identifier string and returns a uid or error.
+func GetUID(user string) (uint32, error) {
+	o, err := strconv.ParseUint(user, 10, 32)
+	if err != nil {
+		u, err := osuser.Lookup(user)
+		if err != nil {
+			return 0, fmt.Errorf("%w: %s: %w", ErrRunLookupUser, user, err)
+		}
+
+		o, err = strconv.ParseUint(u.Uid, 10, 32)
+		if err != nil {
+			return 0, fmt.Errorf("%w: %s: %w", ErrRunLookupUser, user, err)
+		}
+	}
+
+	return uint32(o), nil
 }
 
 // Run uses RunOpts to run CLI commands.
 func (c *Config) Run(ctx context.Context, opts RunOpts) (out CmdOutput, err errs.Err) { //nolint:gocognit
-	cmd, err := opts.getCmd(ctx)
+	cmd, env, err := opts.getCmd(ctx)
 	if err != nil {
 		return "", logger.Error(ctx, errs.ErrReceiver.Wrap(err))
 	}
+
+	if opts.Stdin == "" {
+		cmd.Stdin = os.Stdin
+	} else {
+		cmd.Stdin = bytes.NewBufferString(opts.Stdin)
+	}
+
+	cmd.Env = env
 
 	var e error
 
 	creds := &syscall.Credential{}
 
 	if opts.Group != "" {
-		gid, e := strconv.ParseUint(opts.Group, 10, 32)
+		gid, e := GetGID(opts.Group)
 		if e != nil {
-			g, e := user.Lookup(opts.Group)
-			if e != nil {
-				return "", logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("%w: %s", ErrRunLookupGroup, opts.Group)))
-			}
-
-			gid, e = strconv.ParseUint(g.Gid, 10, 32)
-			if e != nil {
-				return "", logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("%w: %s", ErrRunLookupUser, opts.Group)))
-			}
+			return "", logger.Error(ctx, errs.ErrReceiver.Wrap(e))
 		}
 
-		creds.Gid = uint32(gid)
+		creds.Gid = gid
 
 		if opts.User == "" {
 			creds.Uid = uint32(os.Getuid())
@@ -180,20 +270,12 @@ func (c *Config) Run(ctx context.Context, opts RunOpts) (out CmdOutput, err errs
 	}
 
 	if opts.User != "" {
-		uid, e := strconv.ParseUint(opts.User, 10, 32)
+		uid, e := GetUID(opts.User)
 		if e != nil {
-			u, e := user.Lookup(opts.User)
-			if e != nil {
-				return "", logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("%w: %s", ErrRunLookupUser, opts.User)))
-			}
-
-			uid, e = strconv.ParseUint(u.Uid, 10, 32)
-			if e != nil {
-				return "", logger.Error(ctx, errs.ErrReceiver.Wrap(fmt.Errorf("%w: %s", ErrRunLookupUser, opts.User)))
-			}
+			return "", logger.Error(ctx, errs.ErrReceiver.Wrap(e))
 		}
 
-		creds.Uid = uint32(uid)
+		creds.Uid = uid
 
 		if opts.Group == "" {
 			creds.Gid = uint32(os.Getgid())
@@ -207,11 +289,6 @@ func (c *Config) Run(ctx context.Context, opts RunOpts) (out CmdOutput, err errs
 	}
 
 	cmd.Dir = opts.WorkDir
-
-	if opts.Stdin != "" {
-		b := bytes.NewBufferString(opts.Stdin)
-		cmd.Stdin = b
-	}
 
 	logger.Debug(ctx, "Running commands:\n"+cmd.String())
 
@@ -258,12 +335,13 @@ func (c *Config) Run(ctx context.Context, opts RunOpts) (out CmdOutput, err errs
 
 		c.runMock.mutex.Unlock()
 	} else {
-		if opts.EnvironmentInherit {
-			cmd.Env = os.Environ()
+		if opts.Stderr != nil && opts.Stdout != nil {
+			cmd.Stdout = opts.Stdout
+			cmd.Stderr = opts.Stderr
+			e = cmd.Run()
+		} else {
+			o, e = cmd.CombinedOutput()
 		}
-
-		cmd.Env = append(cmd.Env, opts.Environment...)
-		o, e = cmd.CombinedOutput()
 	}
 
 	out = CmdOutput(o)

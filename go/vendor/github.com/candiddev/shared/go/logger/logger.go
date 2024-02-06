@@ -49,10 +49,10 @@ const (
 )
 
 // Stderr is a the current stderr path.
-var Stderr *os.File = os.Stderr //nolint:gochecknoglobals
+var Stderr = os.Stderr //nolint:gochecknoglobals
 
 // Stdout is a the current stdout path.
-var Stdout *os.File = os.Stdout //nolint:gochecknoglobals
+var Stdout = os.Stdout //nolint:gochecknoglobals
 
 var loggerOut logger = log.New(Stdout, "", 0) //nolint:gochecknoglobals
 var loggerErr logger = log.New(Stderr, "", 0) //nolint:gochecknoglobals
@@ -104,7 +104,7 @@ func (t testLogger) Print(v ...any) {
 	t.Log(fmt.Sprint(v...))
 }
 
-func writeLog(ctx context.Context, level Level, err errs.Err, message string) { //nolint:gocognit
+func writeLog(ctx context.Context, level Level, err errs.Err, message string) { //nolint:gocognit,gocyclo
 	span := trace.SpanFromContext(ctx)
 	f, line := getFunc(3)
 	f = fmt.Sprintf("%s:%d", f, line)
@@ -117,7 +117,7 @@ func writeLog(ctx context.Context, level Level, err errs.Err, message string) { 
 
 		e = err.Error()
 
-		if err.Logged() {
+		if err.Logged() && format != FormatKV {
 			level = LevelDebug
 		}
 	}
@@ -167,15 +167,18 @@ func writeLog(ctx context.Context, level Level, err errs.Err, message string) { 
 		}
 	case FormatKV:
 		out = fmt.Sprintf("level=%#v function=%#v status=%#v success=%#v", strings.ToUpper(string(level)), f, status, status == 200)
-		if e != "" {
-			out += fmt.Sprintf(` error="%s"`, e)
-		}
 
 		if span.SpanContext().HasTraceID() {
 			out += fmt.Sprintf(" traceID=%#v", span.SpanContext().TraceID().String())
 		}
 
-		out += " " + GetAttributes(ctx)
+		for _, key := range GetAttributes(ctx) {
+			out += fmt.Sprintf(` %s="%s"`, key, GetAttribute[any](ctx, key))
+		}
+
+		if e != "" {
+			out += fmt.Sprintf(` error="%s"`, e)
+		}
 
 		if msg != "" {
 			out += fmt.Sprintf(` message="%s"`, msg)

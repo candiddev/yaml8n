@@ -14,6 +14,7 @@ import (
 	"github.com/candiddev/shared/go/config"
 	"github.com/candiddev/shared/go/errs"
 	"github.com/candiddev/shared/go/logger"
+	"golang.org/x/term"
 )
 
 // BuildDate is the application build date in YYYY-MM-DD, set with candid/lib/cli.Builddate build time variable.
@@ -82,6 +83,28 @@ type App[T AppConfig[any]] struct {
 	NoParse          bool
 }
 
+func wrapLines(l int, lines string, indent string) string {
+	s := strings.Fields(strings.TrimSpace(lines))
+	if len(s) == 0 {
+		return lines
+	}
+
+	o := s[0]
+	n := l - len(o)
+
+	for _, w := range s[1:] {
+		if len(w)+1 > n {
+			o += "\n" + indent + w
+			n = l - len(w)
+		} else {
+			o += " " + w
+			n -= 1 + len(w)
+		}
+	}
+
+	return o
+}
+
 // AppConfig is a configuration that can be used with CLI.
 type AppConfig[T any] interface {
 	CLIConfig() *Config
@@ -89,17 +112,26 @@ type AppConfig[T any] interface {
 }
 
 // Run is the main entrypoint into a CLI app.
-func (a App[T]) Run() errs.Err {
+func (a App[T]) Run() errs.Err { //nolint:gocognit
 	ctx := context.Background()
 
-	flag.Usage = func() {
-		//nolint:forbidigo
-		fmt.Fprintf(logger.Stdout, `Usage: %s [flags] [command]
+	f := flag.NewFlagSet("", flag.ContinueOnError)
+	f.Usage = func() {}
+	f.SetOutput(logger.Stdout)
+
+	usage := func(arg string) {
+		if arg == "" {
+			//nolint:forbidigo
+			fmt.Fprintf(logger.Stdout, `Usage: %s [flags] [command]
 
 %s
 
 Commands:
 `, a.Name, a.Description)
+		} else {
+			//nolint:forbidigo
+			fmt.Fprintln(logger.Stdout)
+		}
 
 		c := []string{}
 
@@ -111,10 +143,20 @@ Commands:
 
 		sort.Strings(c)
 
+		w, _, _ := term.GetSize(0)
+
+		if w == 0 || w > 70 {
+			w = 70
+		}
+
 		for i := range c {
 			name := c[i]
 			if (a.Commands[c[i]]).Name != "" {
 				name = a.Commands[c[i]].Name
+			}
+
+			if arg != "" && arg != name {
+				continue
 			}
 
 			for _, arg := range a.Commands[c[i]].ArgumentsRequired {
@@ -125,19 +167,21 @@ Commands:
 				name += fmt.Sprintf(" [%s]", arg)
 			}
 
-			fmt.Fprintf(logger.Stdout, "  %s\n    	%s\n", name, a.Commands[c[i]].Usage) //nolint:forbidigo
+			fmt.Fprintf(logger.Stdout, "  %s\n    	%s\n\n", wrapLines(w, name, ""), wrapLines(w, a.Commands[c[i]].Usage, "     	")) //nolint:forbidigo
 		}
 
 		//nolint: forbidigo
-		fmt.Fprintf(logger.Stdout, "\nFlags:\n")
-
-		flag.CommandLine.SetOutput(logger.Stdout)
-		flag.PrintDefaults()
+		fmt.Fprintf(logger.Stdout, "Flags:\n")
+		f.PrintDefaults()
 	}
 
 	a.Commands["jq"] = Command[T]{
+		ArgumentsOptional: []string{
+			"-r, render raw values",
+			"query string",
+		},
 		Run:   jq[T],
-		Usage: "Query JSON from stdin using jq.  Supports standard JQ queries, and the -r flag to render raw values",
+		Usage: "Query JSON from stdin using jq.  Supports standard JQ queries.",
 	}
 
 	c := ConfigArgs{}
@@ -145,7 +189,7 @@ Commands:
 	if !a.NoParse {
 		a.Config.CLIConfig().ConfigPath = strings.ToLower(a.Name) + ".jsonnet"
 
-		flag.StringVar(&a.Config.CLIConfig().ConfigPath, "c", a.Config.CLIConfig().ConfigPath, "Path to JSON/Jsonnet configuration files separated by a comma")
+		f.StringVar(&a.Config.CLIConfig().ConfigPath, "c", a.Config.CLIConfig().ConfigPath, "Path to JSON/Jsonnet configuration files separated by a comma")
 
 		a.Commands["show-config"] = Command[T]{
 			Run: func(ctx context.Context, args []string, config T) errs.Err {
@@ -154,7 +198,7 @@ Commands:
 			Usage: "Print the current configuration",
 		}
 
-		flag.Var(&c, "x", "Set config key=value (can be provided multiple times)")
+		f.Var(&c, "x", "Set config key=value (can be provided multiple times)")
 	}
 
 	a.Commands["version"] = Command[T]{
@@ -167,11 +211,15 @@ Commands:
 		Usage: "Print version information",
 	}
 
-	flag.StringVar((*string)(&a.Config.CLIConfig().LogFormat), "f", string(a.Config.CLIConfig().LogFormat), "Set log format (human, kv, raw, default: human)")
-	flag.StringVar((*string)(&a.Config.CLIConfig().LogLevel), "l", string(a.Config.CLIConfig().LogLevel), "Set minimum log level (none, debug, info, error, default: info)")
-	flag.BoolVar(&a.Config.CLIConfig().NoColor, "n", a.Config.CLIConfig().NoColor, "Disable colored logging")
+	f.StringVar((*string)(&a.Config.CLIConfig().LogFormat), "f", string(a.Config.CLIConfig().LogFormat), "Set log format (human, kv, raw, default: human)")
+	f.StringVar((*string)(&a.Config.CLIConfig().LogLevel), "l", string(a.Config.CLIConfig().LogLevel), "Set minimum log level (none, debug, info, error, default: info)")
+	f.BoolVar(&a.Config.CLIConfig().NoColor, "n", a.Config.CLIConfig().NoColor, "Disable colored logging")
 
-	flag.Parse()
+	if err := f.Parse(os.Args[1:]); err != nil {
+		usage("")
+
+		return ErrUnknownCommand
+	}
 
 	// Parse CLI environment early for logging options.
 	if err := config.ParseValues(ctx, a.Config, strings.ToUpper(a.Name)+"_cli_", os.Environ()); err != nil {
@@ -183,14 +231,24 @@ Commands:
 	ctx = logger.SetNoColor(ctx, a.Config.CLIConfig().NoColor)
 
 	if !a.NoParse {
+		// Resolve the real config path early by walking parent directories.  If the real config path exists (isn't "") and is different than the current one, update the path value.
+		if p := config.FindPathAscending(ctx, a.Config.CLIConfig().ConfigPath); p != "" && p != a.Config.CLIConfig().ConfigPath {
+			a.Config.CLIConfig().ConfigPath = p
+		}
+
 		if err := a.Config.Parse(ctx, c); err != nil {
 			return err
 		}
 	}
 
-	args := flag.Args()
+	// Refresh ctx for new config values.
+	ctx = logger.SetFormat(ctx, a.Config.CLIConfig().LogFormat)
+	ctx = logger.SetLevel(ctx, a.Config.CLIConfig().LogLevel)
+	ctx = logger.SetNoColor(ctx, a.Config.CLIConfig().NoColor)
+
+	args := f.Args()
 	if len(args) < 1 {
-		flag.Usage()
+		usage("")
 
 		return ErrUnknownCommand
 	}
@@ -200,7 +258,7 @@ Commands:
 			if len(v.ArgumentsRequired) != 0 && (len(args)-1) < len(v.ArgumentsRequired) {
 				logger.Error(ctx, errs.ErrReceiver.Wrap(errors.New("missing arguments: ["+strings.Join(v.ArgumentsRequired[0+len(args)-1:], "] [")+"]\n"))) //nolint:errcheck
 
-				flag.Usage()
+				usage(args[0])
 
 				return ErrUnknownCommand
 			}
@@ -209,7 +267,7 @@ Commands:
 		}
 	}
 
-	flag.Usage()
+	usage("")
 
 	return ErrUnknownCommand
 }

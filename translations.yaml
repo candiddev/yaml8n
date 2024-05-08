@@ -1,0 +1,72 @@
+outputs:
+- format: go
+  package: main
+  path: ../go/yaml8n
+translations:
+  Description:
+    ar: قم بتبسيط توطين تطبيقك من خلال ترجمات آمنة للنوع.
+    context: App description
+    de: Optimieren Sie Ihre App-Lokalisierung mit typsicheren Übersetzungen.
+    en: Streamline your app localization with type-safe translations.
+    es: Optimice la localización de su aplicación con traducciones con seguridad tipográfica.
+    fr: Rationalisez la localisation de votre application avec des traductions de
+      type sécurisé.
+    hi: प्रकार-सुरक्षित अनुवादों के साथ अपने ऐप स्थानीयकरण को सुव्यवस्थित करें।
+    ja: タイプセーフな翻訳でアプリのローカリゼーションを効率化します。
+    nl: Stroomlijn uw app-lokalisatie met typeveilige vertalingen.
+    pt: Simplifique a localização do seu aplicativo com traduções seguras.
+    ru: Оптимизируйте локализацию вашего приложения с помощью типобезопасных переводов.
+    zh: 通过类型安全的翻译简化您的应用程序本地化。
+  GenerateUsage:
+    ar: إنشاء كود للغات البرمجة.
+    context: Generate usage
+    de: Generieren Sie Code für Programmiersprachen.
+    en: Generate code for programming languages.
+    es: Generar código para lenguajes de programación.
+    fr: Générez du code pour les langages de programmation.
+    hi: प्रोग्रामिंग भाषाओं के लिए कोड तैयार करें।
+    ja: プログラミング言語のコードを生成します。
+    nl: Genereer code voor programmeertalen.
+    pt: Gerar código para linguagens de programação.
+    ru: Генерировать код для языков программирования.
+    zh: 为编程语言生成代码。
+  TranslateUsage:
+    ar: أنشئ ترجمات جديدة باستخدام Google Cloud Translation API.
+    context: Translate usage
+    de: Erstellen Sie neue Übersetzungen mit der Google Cloud Translation API.
+    en: Create new translations using Google Cloud Translation API.
+    es: Cree nuevas traducciones utilizando la API de traducción de Google Cloud.
+    fr: Créez de nouvelles traductions à l&#39;aide de l&#39;API Google Cloud Translation.
+    hi: Google क्लाउड अनुवाद API का उपयोग करके नए अनुवाद बनाएँ.
+    ja: Google Cloud Translation API を使用して新しい翻訳を作成します。
+    nl: Maak nieuwe vertalingen met de Google Cloud Translation API.
+    pt: Crie novas traduções usando a API Google Cloud Translation.
+    ru: Создавайте новые переводы с помощью Google Cloud Translation API.
+    zh: 使用 Google Cloud Translation API 创建新的翻译。
+  ValidateUsage:
+    ar: التحقق من صحة الترجمات.
+    context: Validate usage
+    de: Validieren Sie die Übersetzungen.
+    en: Validate the translations.
+    es: Validar las traducciones.
+    fr: Validez les traductions.
+    hi: अनुवादों को मान्य करें.
+    ja: 翻訳を検証します。
+    nl: Valideer de vertalingen.
+    pt: Valide as traduções.
+    ru: Подтвердите переводы.
+    zh: 验证翻译。
+  WatchUsage:
+    ar: شاهد ملف الإدخال وأعد إنشاء التعليمات البرمجية عند التغييرات.
+    context: Watch usage
+    de: Beobachten Sie die Eingabedatei und generieren Sie den Code bei Änderungen
+      neu.
+    en: Watch the input file and regenerate code on changes.
+    es: Mire el archivo de entrada y regenere el código en caso de cambios.
+    fr: Surveillez le fichier d&#39;entrée et régénérez le code en cas de modifications.
+    hi: इनपुट फ़ाइल पर नज़र रखें और परिवर्तनों पर कोड पुनः उत्पन्न करें।
+    ja: 入力ファイルを監視し、変更があった場合はコードを再生成します。
+    nl: Bekijk het invoerbestand en genereer code opnieuw bij wijzigingen.
+    pt: Observe o arquivo de entrada e gere novamente o código nas alterações.
+    ru: Следите за входным файлом и перегенерируйте код при изменениях.
+    zh: 观察输入文件并在发生改变时重新生成代码。

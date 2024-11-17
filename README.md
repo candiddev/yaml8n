@@ -2,7 +2,7 @@
 
 > Streamline Your App Localization with Type-Safe Translations
 
-**Latest Release Notes: [v2024.06](https://yaml8n.dev/blog/whats-new-202406/)**
+**Latest Release Notes: [v2024.11](https://yaml8n.dev/blog/whats-new-202411/)**
 
 [:speech_balloon: Discussions](https://github.com/candiddev/yaml8n/discussions)\
 [:book: Docs](https://yaml8n.dev/docs/)\

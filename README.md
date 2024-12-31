@@ -7,6 +7,7 @@
 [:speech_balloon: Discussions](https://github.com/candiddev/yaml8n/discussions)\
 [:book: Docs](https://yaml8n.dev/docs/)\
 [:arrow_down: Download](https://yaml8n.dev/docs/guides/install-yaml8n/)\
+[:eyes: Open Source Details](https://candid.dev/open-source)
 
 YAML8n is a command line (CLI) tool for converting translations into type safe code.
 

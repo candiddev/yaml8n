@@ -4,7 +4,7 @@
 
 **Latest Release Notes: [v2025.02](https://yaml8n.dev/blog/whats-new-202502/)**
 
-[:speech_balloon: Discussions](https://github.com/candiddev/yaml8n/discussions)\
+[:speech_balloon: Mailing Lists](https://yaml8n.dev/docs/references/mailing-lists/)\
 [:book: Docs](https://yaml8n.dev/docs/)\
 [:arrow_down: Download](https://yaml8n.dev/docs/guides/install-yaml8n/)\
 [:eyes: Open Source Details](https://candid.dev/open-source)

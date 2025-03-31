@@ -1,6 +1,6 @@
 # <img alt=logo src=yaml8n.png width=40px> YAML8n
 
-> Streamline Your App Localization with Type-Safe Translations
+> Type-Safe Translations Using YAML
 
 **Latest Release Notes: [v2025.02](https://yaml8n.dev/blog/whats-new-202502/)**
 

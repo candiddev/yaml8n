@@ -2,7 +2,7 @@
 
 > Type-Safe Translations Using YAML
 
-**Latest Release Notes: [v2025.02](https://yaml8n.dev/blog/whats-new-202502/)**
+**Latest Release Notes: [v2025.04](https://yaml8n.dev/blog/whats-new-202504/)**
 
 [:speech_balloon: Mailing Lists](https://yaml8n.dev/docs/references/mailing-lists/)\
 [:book: Docs](https://yaml8n.dev/docs/)\

@@ -9,21 +9,21 @@ title: Config
 
 ## Configuration Values
 
-{{% snippet "config_cli" %}}
+{{% snippet "config_cli" green %}}
 
-{{% snippet config_key "checkCode" %}}
+### `checkCode` {#checkcode}
 
 String, check/validate a specific [language code]({{< ref "/docs/references/translations#iso639codes" >}}).
 
 **Default:** `""`
 
-{{% snippet config_key "defaultCode" %}}
+### `defaultCode` {#defaultcode}
 
 String, the default [language code]({{< ref "/docs/references/translations#iso639codes" >}}) to use if none are set in the translation file.  Used to globally set the `defaultCode` value across multiple translation files or within a monorepo.
 
 **Default:** `""`
 
-{{% snippet config_key "failWarn" %}}
+### `failWarn` {#failwarn}
 
 Boolean, if warnings should cause failures.
 
@@ -31,7 +31,7 @@ Boolean, if warnings should cause failures.
 
 {{% snippet "config_httpClient" YAML8n %}}
 
-{{% snippet config_key "iso639Codes" %}}
+### `iso639Codes` {#iso639codes}
 
 Map of ISO 639 codes to their pretty name.  YAML8n will warn on translations that are missing these codes.  Will be used if none are set in the translation file.  Used to globally set the `iso639Codes` value across multiple translation files or within a monorepo.
 
@@ -41,7 +41,7 @@ Map of ISO 639 codes to their pretty name.  YAML8n will warn on translations tha
 
 {{% snippet config_licenseKey YAML8n %}}
 
-{{% snippet config_key "translations" %}}
+### `translations` {#translations}
 
 String, the path to a translations YAML file.
 

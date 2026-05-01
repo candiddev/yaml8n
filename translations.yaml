@@ -14,6 +14,8 @@ translations:
     hi: प्रकार-सुरक्षित अनुवादों के साथ अपने ऐप स्थानीयकरण को सुव्यवस्थित करें।
     ja: タイプセーフな翻訳でアプリのローカリゼーションを効率化します。
     nl: Stroomlijn uw app-lokalisatie met typeveilige vertalingen.
+    pl: Usprawnij lokalizację swojej aplikacji dzięki tłumaczeniom uwzględniającym
+      typ bezpieczeństwa.
     pt: Simplifique a localização do seu aplicativo com traduções seguras.
     ru: Оптимизируйте локализацию вашего приложения с помощью типобезопасных переводов.
     zh: 通过类型安全的翻译简化您的应用程序本地化。
@@ -27,6 +29,7 @@ translations:
     hi: प्रोग्रामिंग भाषाओं के लिए कोड तैयार करें।
     ja: プログラミング言語のコードを生成します。
     nl: Genereer code voor programmeertalen.
+    pl: Generuj kod dla języków programowania.
     pt: Gerar código para linguagens de programação.
     ru: Генерировать код для языков программирования.
     zh: 为编程语言生成代码。
@@ -40,6 +43,7 @@ translations:
     hi: Google क्लाउड अनुवाद API का उपयोग करके नए अनुवाद बनाएँ.
     ja: Google Cloud Translation API を使用して新しい翻訳を作成します。
     nl: Maak nieuwe vertalingen met de Google Cloud Translation API.
+    pl: Twórz nowe tłumaczenia za pomocą interfejsu API Google Cloud Translation.
     pt: Crie novas traduções usando a API Google Cloud Translation.
     ru: Создавайте новые переводы с помощью Google Cloud Translation API.
     zh: 使用 Google Cloud Translation API 创建新的翻译。
@@ -53,6 +57,7 @@ translations:
     hi: अनुवादों को मान्य करें.
     ja: 翻訳を検証します。
     nl: Valideer de vertalingen.
+    pl: Sprawdź poprawność tłumaczeń.
     pt: Valide as traduções.
     ru: Подтвердите переводы.
     zh: 验证翻译。
@@ -67,6 +72,7 @@ translations:
     hi: इनपुट फ़ाइल पर नज़र रखें और परिवर्तनों पर कोड पुनः उत्पन्न करें।
     ja: 入力ファイルを監視し、変更があった場合はコードを再生成します。
     nl: Bekijk het invoerbestand en genereer code opnieuw bij wijzigingen.
+    pl: Obserwuj plik wejściowy i regeneruj kod w przypadku zmian.
     pt: Observe o arquivo de entrada e gere novamente o código nas alterações.
     ru: Следите за входным файлом и перегенерируйте код при изменениях.
     zh: 观察输入文件并在发生改变时重新生成代码。
